@@ -1,6 +1,13 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+# In[2]:
+
+
+# Get the packages and version nums that work from your jupyter environment.
+#!pip freeze > requirements.txt
+
+
 # In[ ]:
 
 
@@ -21,7 +28,7 @@ import cartopy.feature as cfeature
 # In[ ]:
 
 
-home_dir = "/gpfs01/v2/Q9157/momoe/geo_polar_blended_sst/Linux_JCUHPC/blended_home"
+home_dir = "/Users/momotalo/Library/CloudStorage/OneDrive-JamesCookUniversity/PhD_MomoeYoshida/Coding/blended_home"
 
 
 # In[ ]:
@@ -136,7 +143,8 @@ def trim_da(da, extent=(140,155,-25,-10)):
 
 # Usage: save_ts_nc("20250131", "20250205")
 # TNT: may need to add some codes to ensure coordinates match between sst and cm and files?
-# HPC
+# HPC: Save this as .py > Upload on HPC Code/ > Run a function in the compute node
+# Default extent: GBR
 
 def save_ts_nc(start_date, end_date):
     """Save time series of variables in a netCDF file.""" 
