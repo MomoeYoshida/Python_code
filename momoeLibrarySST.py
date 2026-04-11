@@ -28,7 +28,7 @@ import cartopy.feature as cfeature
 # In[ ]:
 
 
-home_dir = "/Users/momotalo/Library/CloudStorage/OneDrive-JamesCookUniversity/PhD_MomoeYoshida/Coding/blended_home"
+home_dir = "/gpfs01/v2/Q9157/momoe/geo_polar_blended_sst/Linux_JCUHPC/blended_home"
 
 
 # In[ ]:
