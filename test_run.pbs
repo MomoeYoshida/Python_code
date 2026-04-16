@@ -7,6 +7,8 @@
 #PBS -l walltime=48:00:00
 #PBS -o /gpfs01/v2/Q9157/momoe/geo_polar_blended_sst/Linux_JCUHPC/blended_home/Logs/test_momoeLibrarySST.log
 
+#version controlled by git connected to remote Python_code.git.
+
 # Move to the directory where the job was submitted
 cd $PBS_O_WORKDIR
 shopt -s expand_aliases
