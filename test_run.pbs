@@ -10,7 +10,7 @@
 #version controlled by git connected to remote Python_code.git.
 
 # Move to the directory where the job was submitted
-cd $PBS_O_WORKDIR
+cd $PBS_O_WORKDIR/..
 shopt -s expand_aliases
 source /etc/profile.d/modules.sh
 echo "Job identifier is $PBS_JOBID"
@@ -26,4 +26,4 @@ export PATH=$HOME/.local/bin:$PATH
 export PYTHONPATH=$HOME/.local/lib/python3.11/site-packages:$PYTHONPATH
 
 # Run the test
-python test_run.py
+python -m script.test_run
