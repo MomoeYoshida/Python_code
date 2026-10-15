@@ -29,6 +29,6 @@ do
         -v SUFFIX="$SUFFIX" \
         -N "$jobname" \
         -o "$logfile" \
-        script/run_save_ts_nc.pbs
+        run_save_ts_nc.pbs
 
 done

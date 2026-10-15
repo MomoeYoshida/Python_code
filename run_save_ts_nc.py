@@ -1,4 +1,4 @@
-from lib.momoeLibrarySST imprun_save_ts.short *
+import momoeLibrarySST
 import sys
 
 suffix = sys.argv[1] #thin_name
