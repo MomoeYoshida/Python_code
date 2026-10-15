@@ -1,0 +1,13 @@
+
+# Python-generated files
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Operating-system metadata
+.DS_Store
+
+# Logs and temporary files
+*.log
+*.out
+*.err
