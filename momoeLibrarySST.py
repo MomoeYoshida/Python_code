@@ -49,7 +49,7 @@ from pathlib import Path
 # %%
 # HPC
 home_dir = "/gpfs01/v2/Q9157/momoe/geo_polar_blended_sst/Linux_JCUHPC/blended_home"
-
+analysis_dir = "/Analysis_test"
 # Local
 #home_dir = "/Users/momotalo/Library/CloudStorage/OneDrive-JamesCookUniversity/PhD_MomoeYoshida/Coding/blended_home"
 
@@ -82,10 +82,10 @@ def julian_to_datetime(julian_str):
 # %%
 # Usage: extract_var_from_l4_mat_file("sst_analysis", "2025_010", "/Analysis")
 
-def extract_var_from_l4_mat_file(varname, date, file_dir="/Analysis"):
+def extract_var_from_l4_mat_file(varname, date):
     """Read a .mat file and extract and display a variable."""
     print(f'Extracting a variable {varname} for date {date}...')
-    file = home_dir+file_dir+"/"+varname+"_"+date+".mat"
+    file = home_dir+analysis_dir+"/"+varname+"_"+date+".mat"
     print(f'Reading a file {file}...')
     data = loadmat(file)
     print(data.keys())
@@ -158,10 +158,10 @@ def trim_da(da, extent=(140,155,-25,-10)):
 # HPC: Save this as .py > Upload on HPC Python_code/lib/ > Run a function in the compute node
 # Default extent: GBR
 
-def save_ts_nc(start_date, end_date, thin_name=""):
+def save_ts_nc(start_date, end_date, outfilename="gbr_sst_fo_cm_er_var_timeseries", thin_name=""):
     """Save time series of variables in a netCDF file.""" 
     #filename = '/gpfs01/home/jc501791/'+"gbr_sst_cm_er_var_timeseries"+thin_name+"_"+start_date+"-"+end_date+".nc"
-    filename = home_dir+'/Output/'+"gbr_sst_cm_er_var_timeseries"+thin_name+"_"+start_date+"-"+end_date+".nc"
+    filename = home_dir+'/Output/'+outfilename+thin_name+"_"+start_date+"-"+end_date+".nc"
     # --- Delete existing file if it exists ---
     if os.path.exists(filename):
         print(f"Deleting existing file: {filename}")
@@ -174,19 +174,23 @@ def save_ts_nc(start_date, end_date, thin_name=""):
     for jd in julian_days:
         print(f'***Processing {jd}...')
         # --- SST ---
-        sst = extract_var_from_l4_mat_file("sst_analysis", jd, "/Analysis"+thin_name)
+        sst = extract_var_from_l4_mat_file("sst_analysis", jd, analysis_dir+thin_name)
         da_sst = trim_da(add_lats_lons(sst))
-    
+   
+        # --- Full obs ---
+        full_obs = extract_var_from_l4_mat_file("full_obs", jd, analysis_dir+thin_name)
+        da_fo = trim_da(add_lats_lons(full_obs))
+
         # --- Correlation map ---
-        cm = extract_var_from_l4_mat_file("correlation_map", jd, "/Analysis"+thin_name)
+        cm = extract_var_from_l4_mat_file("correlation_map", jd, analysis_dir+thin_name)
         da_cm = trim_da(add_lats_lons(cm))
 
         # --- Error analysis ---
-        er = extract_var_from_l4_mat_file("error_analysis", jd, "/Analysis"+thin_name)
+        er = extract_var_from_l4_mat_file("error_analysis", jd, analysis_dir+thin_name)
         da_er = trim_da(add_lats_lons(er))
 
         # --- SST variability ---
-        sst_var = extract_var_from_l4_mat_file("sst_variability", jd, "/Analysis"+thin_name)
+        sst_var = extract_var_from_l4_mat_file("sst_variability", jd, analysis_dir+thin_name)
         da_sst_var = trim_da(add_lats_lons(sst_var))
     
         # --- Convert time ---
@@ -196,6 +200,7 @@ def save_ts_nc(start_date, end_date, thin_name=""):
         ds_day = xr.Dataset(
             {
                 "sst": da_sst,
+                "full_obs": da_fo,
                 "correlation_map": da_cm,
                 "error_analysis": da_er,
                 "sst_variability": da_sst_var
