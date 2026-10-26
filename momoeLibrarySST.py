@@ -50,8 +50,12 @@ from pathlib import Path
 # HPC
 home_dir = "/gpfs01/v2/Q9157/momoe/geo_polar_blended_sst/Linux_JCUHPC/blended_home"
 analysis_dir = "/Analysis_test"
+ancillary_dir = "/Ancillary"
 # Local
 #home_dir = "/Users/momotalo/Library/CloudStorage/OneDrive-JamesCookUniversity/PhD_MomoeYoshida/Coding/blended_home"
+
+
+
 
 
 # %%
@@ -123,6 +127,7 @@ def add_lats_lons(var, est_res=0.05):
         print(f'***Warning: lat and/or lon_res is different to the estimated resolution {est_res}.')
 
     # --- Create lat/lon arrays
+    # TNT: confirm whether this orientation is correct
     lats = np.linspace(-90 + lat_res/2, 90 - lat_res/2, nlat)
     lons = np.linspace(-180 + lon_res/2, 180 - lon_res/2, nlon)
     
