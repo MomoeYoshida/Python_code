@@ -118,8 +118,8 @@ def extract_var_from_l4_mat_file(varname, date):
 def add_lats_lons(var, est_res=0.05):
     """Create xarray DataArray including lats and lons."""
     # Read the shape of var.
-    nlat = var.shape[0]
-    nlon = var.shape[1]
+    nlat = var.shape[0] #3600
+    nlon = var.shape[1] #7200
     lat_res = 180 / nlat
     lon_res = 360 / nlon
     print(f'Resolution based on nlat and nlon: {lat_res}°x{lon_res}°')
@@ -127,16 +127,31 @@ def add_lats_lons(var, est_res=0.05):
         print(f'***Warning: lat and/or lon_res is different to the estimated resolution {est_res}.')
 
     # --- Create lat/lon arrays
-    # TNT: confirm whether this orientation is correct
-    lats = np.linspace(-90 + lat_res/2, 90 - lat_res/2, nlat)
-    lons = np.linspace(-180 + lon_res/2, 180 - lon_res/2, nlon)
+    # -Note- 
+    # 1. .mat in blended_home/ do not contain coordinate arrays (lats,lons)
+    # 2. we just know the shape (3600,7200) but don't know the exact spatial orientation (direction)
+    # 3. the source MATLAB arrays are ordered south to north and west to east; confirmed with plt.imshow(...origin="lower"...) 
+    lats = np.linspace(-90 + lat_res/2, 90 - lat_res/2, nlat) # [-89.975 -89.925 -89.875 ...  89.875  89.925  89.975]
+    lons = np.linspace(-180 + lon_res/2, 180 - lon_res/2, nlon) # [-179.975 -179.925 -179.875 ...  179.875  179.925  179.975]
     
     # --- Create xarray DataArray
     da = xr.DataArray(
         var,
         coords={"lat": lats, "lon": lons},
         dims=("lat", "lon"),
-        name="var"
+        name="var",
+        attrs={
+            "source_grid_shape": "3600 x 7200",
+            "spatial_resolution_degrees": est_res,
+            "latitude_order": "south_to_north",
+            "longitude_order": "west_to_east",
+            "longitude_convention": "-180_to_180",
+            "coordinate_location": "grid_cell_centres",
+            "coordinate_source": (
+                "Coordinates reconstructed because source MAT file "
+                "does not contain latitude or longitude arrays."
+            ),
+        },
     )
     return da
     
