@@ -198,6 +198,55 @@ def prepare_daily_variable(var_name, jd):
 
     return da_regional
 
+def inspect_concatenated_dataset(dataset, random_seed=42, number_of_samples=5):
+    """Print manual-inspection information for a cropped time-series Dataset."""
+    print()
+    print("=" * 60)
+    print("CONCATENATED CROPPED DATASET INSPECTION")
+    print("=" * 60)
+    print(dataset)
+    print()
+    print(f"Dataset sizes: {dict(dataset.sizes)}")
+    print(f"Time range: {dataset.time.values[0]} to {dataset.time.values[-1]}")
+    print(f"Latitude range: {dataset.lat.values[0]} to {dataset.lat.values[-1]}")
+    print(f"Longitude range: {dataset.lon.values[0]} to {dataset.lon.values[-1]}")
+
+    rng = np.random.default_rng(random_seed)
+    
+    # Use the same sample cells for every variable.
+    time_indices = rng.integers(0, dataset.sizes["time"], size=number_of_samples)
+    lat_indices = rng.integers(0, dataset.sizes["lat"], size=number_of_samples)
+    lon_indices = rng.integers(0, dataset.sizes["lon"], size=number_of_samples)
+    
+    for var in dataset.data_vars:
+        da = dataset[var]
+        values = da.values
+        print()
+        print("-" * 50)
+        print(f"Variable:       {var}")
+        print(f"Dimensions:     {da.dims}")
+        print(f"Shape:          {da.shape}")
+        print(f"Dtype:          {da.dtype}")
+        print(f"Memory size:    {values.nbytes / 1024**2:.2f} MiB")
+        print(f"Minimum:        {values.min()}")
+        print(f"Maximum:        {values.max()}")
+        
+        for sample_number, (time_index, lat_index, lon_index) in enumerate(zip(time_indices, lat_indices, lon_indices), start=1):
+            value = values[time_index, lat_index, lon_index]
+
+            time_value = dataset.time.values[time_index]
+
+            latitude = dataset.lat.values[lat_index]
+
+            longitude = dataset.lon.values[lon_index]
+
+            print(f"  {sample_number}: time={time_value}, lat={latitude:.3f}, lon={longitude:.3f}, value={value}")
+
+    print()
+    print("=" * 60)
+    print("END OF DATASET INSPECTION")
+    print("=" * 60)
+
 
 # %%
 # Usage: save_ts_nc("20250131", "20250205", "_thin_5")
