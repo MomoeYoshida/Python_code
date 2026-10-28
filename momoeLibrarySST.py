@@ -51,6 +51,8 @@ from pathlib import Path
 home_dir = "/gpfs01/v2/Q9157/momoe/geo_polar_blended_sst/Linux_JCUHPC/blended_home"
 analysis_dir = "/Analysis_test"
 ancillary_dir = "/Ancillary"
+thin_name = ""
+expected_global_shape=(3600, 7200)
 # Local
 #home_dir = "/Users/momotalo/Library/CloudStorage/OneDrive-JamesCookUniversity/PhD_MomoeYoshida/Coding/blended_home"
 
@@ -110,8 +112,6 @@ def extract_var_from_l4_mat_file(varname, date):
 
     return var_clean
     
-
-
 # %%
 # Usage: add_lats_lons(var)
 
@@ -170,6 +170,34 @@ def trim_da(da, extent=(140,155,-25,-10)):
 
     return trim_da
 
+def prepare_daily_variable(var_name, jd):
+    """Load one global daily variable, add coordinates, crop it, and print diagnostic information only for the cropped regional DataArray."""
+    
+    # 1. Load the global source array.
+    array = extract_var_from_l4_mat_file(var_name, jd, analysis_dir+thin_name) 
+    array = np.asarray(array)
+
+    if array.shape != expected_global_shape:
+        raise ValueError(f"{variable_name}_{jd} has shape {array.shape}; "
+                         f"expected {expected_global_shape}")
+
+    if not np.issubdtype(array.dtype, np.number):
+        raise TypeError(f"{variable_name}_{jd} is not numeric. "
+                        f"Found dtype: {array.dtype}")
+
+    # 2. Add coordinates and crop.
+    da_global = add_lats_lons(array)
+    da_regional = trim_da(da_global).copy(deep=True)
+    
+    if (da_regional.sizes["lat"] == 0 or da_regional.sizes["lon"] == 0):
+        raise ValueError(f"{variable_name}_{jd}: trim_da() returned an empty regional array.")
+
+    da_regional.name = var_name
+    del array
+    del da_global
+
+    return da_regional
+
 
 # %%
 # Usage: save_ts_nc("20250131", "20250205", "_thin_5")
@@ -178,17 +206,28 @@ def trim_da(da, extent=(140,155,-25,-10)):
 # HPC: Save this as .py > Upload on HPC Python_code/lib/ > Run a function in the compute node
 # Default extent: GBR
 
-def save_ts_nc(start_date, end_date, outfilename="gbr_sst_fo_cm_er_var_timeseries", thin_name=""):
-    """Save time series of variables in a netCDF file.""" 
+def save_ts_nc(start_date, end_date, sitename="gbr"):
+    """Save regional time series of daily GPB diagnostic variables to one netCDF file.""" 
+    
+
     #filename = '/gpfs01/home/jc501791/'+"gbr_sst_cm_er_var_timeseries"+thin_name+"_"+start_date+"-"+end_date+".nc"
-    filename = home_dir+'/Output/'+outfilename+thin_name+"_"+start_date+"-"+end_date+".nc"
+    filename = home_dir+'/Output/'+sitename+"_gpb_diagnostic_vars_"+thin_name+"_"+start_date+"-"+end_date+".nc"
+    
+    print("=" * 80)
+    print("SAVE GPB DIAGNOSTIC TIME SERIES")
+    print("=" * 80)
+    print(f"Output file:        {filename}")
+    print("=" * 80)
+
     # --- Delete existing file if it exists ---
     if os.path.exists(filename):
         print(f"Deleting existing file: {filename}")
         os.remove(filename)
     
     julian_days = generate_julian_days(start_date, end_date)
-    
+    print(f"Number of days to process: {len(julian_days)}")
+
+
     ds_list = []
 
     for jd in julian_days:
