@@ -62,7 +62,6 @@ expected_global_shape=(3600, 7200)
 
 # %%
 # Usage: generate_julian_days("20250131", "20250205")
-
 def generate_julian_days(start_date, end_date):
     # Convert string → datetime
     print(f'Generating Julian days from {start_date} to {end_date}...')
@@ -86,7 +85,7 @@ def julian_to_datetime(julian_str):
 
 
 # %%
-# Usage: extract_var_from_l4_mat_file("sst_analysis", "2025_010", "/Analysis")
+# Usage: extract_var_from_l4_mat_file("sst_analysis", "2025_010")
 
 def extract_var_from_l4_mat_file(varname, date):
     """Read a .mat file and extract and display a variable."""
@@ -174,7 +173,7 @@ def prepare_daily_variable(var_name, jd):
     """Load one global daily variable, add coordinates, crop it, and print diagnostic information only for the cropped regional DataArray."""
     
     # 1. Load the global source array.
-    array = extract_var_from_l4_mat_file(var_name, jd, analysis_dir+thin_name) 
+    array = extract_var_from_l4_mat_file(var_name, jd) 
     array = np.asarray(array)
 
     if array.shape != expected_global_shape:
@@ -256,7 +255,7 @@ def save_ts_nc(start_date, end_date, sitename="gbr"):
     
 
     #filename = '/gpfs01/home/jc501791/'+"gbr_sst_cm_er_var_timeseries"+thin_name+"_"+start_date+"-"+end_date+".nc"
-    filename = home_dir+'/Output/'+sitename+"_gpb_diagnostic_vars_"+thin_name+"_"+start_date+"-"+end_date+".nc"
+    filename = home_dir+'/Output/'+sitename+"_gpb_diagnostic_vars"+thin_name+"_"+start_date+"-"+end_date+".nc"
     
     print("=" * 80)
     print("SAVE GPB DIAGNOSTIC TIME SERIES")
@@ -272,7 +271,7 @@ def save_ts_nc(start_date, end_date, sitename="gbr"):
     julian_days = generate_julian_days(start_date, end_date)
     print(f"Number of days to process: {len(julian_days)}")
 
-    var_names = ["sst_analysis", "error_analysis", "sst_variability", "full_obs", "valid_l3c_bitmask"]
+    var_names = ["sst_analysis", "error_analysis", "sst_variability", "full_obs", "correlation_map", "valid_l3c_bitmask"]
 
     ds_list = []
 
@@ -283,8 +282,7 @@ def save_ts_nc(start_date, end_date, sitename="gbr"):
             daily_vars[var_name] = prepare_daily_variable(var_name, jd)
 
         time = julian_to_datetime(jd)
-        ds_day = xr.Dataset(daily_vars).expand_dims(time=[time])
-        current_shape = (ds_day.sizes["lat"], ds_day.sizes["lon"])
+        ds_day = xr.Dataset(daily_vars).expand_dims(time=[time]) 
 
         ds_list.append(ds_day)
 
@@ -293,11 +291,9 @@ def save_ts_nc(start_date, end_date, sitename="gbr"):
 
     del ds_list
     if ds_all.sizes["time"] != len(julian_days):
-        raise ValueError(f"Time dimension contains {ds_all.sizes['time']} days; expected {len(julian_days)}.")
+        raise ValueError(f"Time dimension contains {ds_all.sizes['time']} days; expected {len(julian_days)}.") 
 
-    time_index = pd.Index(ds_all.time.values)
-
-    inspect_concatenated_dataset(ds_all, random_seed=random_seed, number_of_samples=number_of_samples)
+    inspect_concatenated_dataset(ds_all)
 
     ds_all.attrs = {
         "title": "Regional GPB daily diagnostic time series",
