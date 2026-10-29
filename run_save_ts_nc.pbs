@@ -1,9 +1,13 @@
 #!/bin/bash
 #PBS -j oe
 #PBS -m ae
+#PBS -N run_save_ts_nc
 #PBS -M momoe.yoshida@my.jcu.edu.au
-#PBS -l select=1:ncpus=1:mem=96gb
+#PBS -l select=1:ncpus=1:mem=16gb
 #PBS -l walltime=02:00:00
+#PBS -o /gpfs01/v2/Q9157/momoe/geo_polar_blended_sst/Linux_JCUHPC/blended_home/Logs/run_save_ts_nc.log
+
+set -euo pipefail
 
 cd $PBS_O_WORKDIR
 shopt -s expand_aliases
@@ -14,9 +18,9 @@ echo "Working directory is $PBS_O_WORKDIR"
 module purge
 module load python3/3.11.4
 
-export PATH=$HOME/.local/bin:$PATH
-export PYTHONPATH=$HOME/.local/lib/python3.11/site-packages:$PYTHONPATH
+echo "Start: $(date)"
 
-echo "Running suffix: $SUFFIX"
-python script/run_save_ts_nc.py "$SUFFIX"
-echo "Completed suffix: $SUFFIX"
+python3 run_save_ts_nc.py
+
+echo "End: $(date)"
+echo "save_ts_nc completed successfully."
