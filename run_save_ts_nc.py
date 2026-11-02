@@ -1,8 +1,6 @@
-import momoeLibrarySST
-import sys
+from momoeLibrarySST import save_ts_nc
 
-suffix = sys.argv[1] #thin_name
+ds, filename = save_ts_nc("20250101", "20250301")
 
-save_ts_nc("20250111", "20250430", suffix)
-
-print(f"Completed {suffix}")
+print(ds)
+print(f"Created: {filename}")
