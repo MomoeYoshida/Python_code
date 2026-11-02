@@ -269,6 +269,20 @@ def save_ts_nc(start_date, end_date, sitename="gbr"):
         os.remove(filename)
     
     julian_days = generate_julian_days(start_date, end_date)
+
+    # valid_l3c_metadata
+    first_jd = julian_days[0]
+    metadata_path = home_dir + analysis_dir + thin_name + "/valid_l3c_bitmask_" + first_jd + ".mat"
+
+    metadata_data = loadmat(metadata_path,squeeze_me=True,struct_as_record=False)
+    metadata = metadata_data["valid_l3c_metadata"]
+    bit_indices = np.atleast_1d(metadata.bit_index).astype(int)
+    dataset_names = [str(name) for name in np.atleast_1d(metadata.dataset_names)]
+    bit_values = [2**(index-1) for index in bit_indices]
+
+
+
+
     print(f"Number of days to process: {len(julian_days)}")
 
     var_names = ["sst_analysis", "error_analysis", "sst_variability", "full_obs", "correlation_map", "valid_l3c_bitmask"]
@@ -290,6 +304,19 @@ def save_ts_nc(start_date, end_date, sitename="gbr"):
     ds_all = xr.concat(ds_list, dim="time", data_vars="all", coords="minimal", compat="equals", join="exact").sortby("time")
 
     del ds_list
+
+    ds_all["valid_l3c_bitmask"].attrs = {
+    "long_name": "Valid post-QC L3C input dataset bitmask",
+    "definition": str(metadata.definition),
+    "storage_dtype": "uint16",
+    "matlab_bit_numbering": str(metadata.matlab_bit_numbering),
+    "n_datasets": int(metadata.n_datasets),
+    "dataset_names": "|".join(dataset_names),
+    "bit_indices": ",".join(str(index) for index in bit_indices),
+    "bit_values": ",".join(str(value) for value in bit_values),
+    "max_obs_deviation": float(metadata.max_obs_deviation)
+     }
+
     if ds_all.sizes["time"] != len(julian_days):
         raise ValueError(f"Time dimension contains {ds_all.sizes['time']} days; expected {len(julian_days)}.") 
 
@@ -316,7 +343,7 @@ def save_ts_nc(start_date, end_date, sitename="gbr"):
     }
      
     encoding = {var_name: {"zlib": True, "complevel": 4} for var_name in var_names}
-  
+    encoding["valid_l3c_bitmask"]["dtype"] = "uint16" 
     print(f"Saving NetCDF: {filename}")
     ds_all.to_netcdf(filename, engine="netcdf4", encoding=encoding)
 
