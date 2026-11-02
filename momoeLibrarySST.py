@@ -193,6 +193,31 @@ def prepare_daily_variable(var_name, jd):
 
     return da_regional
 
+def prepare_land_mask():
+    """Load, geolocate and crop the static GPB land mask."""
+
+    path = home_dir+ancillary_dir+"/land_mask_twentieth.mat"
+    data = loadmat(path,variable_names=["land_mask"])
+
+    if "land_mask" not in data:
+        raise KeyError(f"'land_mask' was not found in {path}")
+
+    land_mask = np.asarray(data["land_mask"])
+
+    if land_mask.shape!=(3600,7200):
+        raise ValueError(
+            f"land_mask has shape {land_mask.shape}; expected (3600, 7200)."
+        )
+
+    da_land_mask = trim_da(add_lats_lons(land_mask)).copy(deep=True)
+    da_land_mask.name = "land_mask"
+    da_land_mask.attrs = {
+        "long_name":"GPB land and ocean mask",
+        "comment":"land_mask == 0 indicates land; land_mask != 0 indicates non-land"
+    }
+
+    return da_land_mask
+
 def inspect_concatenated_dataset(dataset, random_seed=42, number_of_samples=5):
     """Print manual-inspection information for a cropped time-series Dataset."""
     print()
@@ -225,17 +250,18 @@ def inspect_concatenated_dataset(dataset, random_seed=42, number_of_samples=5):
         print(f"Memory size:    {values.nbytes / 1024**2:.2f} MiB")
         print(f"Minimum:        {np.nanmin(values)}")
         print(f"Maximum:        {np.nanmax(values)}")
-        
-        for sample_number, (time_index, lat_index, lon_index) in enumerate(zip(time_indices, lat_indices, lon_indices), start=1):
-            value = values[time_index, lat_index, lon_index]
+       
+        if "time" in da.dims:
+            for sample_number, (time_index, lat_index, lon_index) in enumerate(zip(time_indices, lat_indices, lon_indices), start=1):
+                value = values[time_index, lat_index, lon_index]
 
-            time_value = dataset.time.values[time_index]
+                time_value = dataset.time.values[time_index]
 
-            latitude = dataset.lat.values[lat_index]
+                latitude = dataset.lat.values[lat_index]
 
-            longitude = dataset.lon.values[lon_index]
+                longitude = dataset.lon.values[lon_index]
 
-            print(f"  {sample_number}: time={time_value}, lat={latitude:.3f}, lon={longitude:.3f}, value={value}")
+                print(f"  {sample_number}: time={time_value}, lat={latitude:.3f}, lon={longitude:.3f}, value={value}")
 
     print()
     print("=" * 60)
@@ -305,6 +331,22 @@ def save_ts_nc(start_date, end_date, sitename="gbr"):
 
     del ds_list
 
+    da_land_mask = prepare_land_mask()
+
+    if da_land_mask.shape!=(ds_all.sizes["lat"],ds_all.sizes["lon"]):
+        raise ValueError(
+            f"land_mask shape {da_land_mask.shape} does not match "
+            f"Dataset shape {(ds_all.sizes['lat'],ds_all.sizes['lon'])}."
+        )
+
+    if not da_land_mask.lat.equals(ds_all.lat):
+        raise ValueError("land_mask latitude coordinates do not match ds_all.")
+
+    if not da_land_mask.lon.equals(ds_all.lon):
+        raise ValueError("land_mask longitude coordinates do not match ds_all.")
+
+    ds_all["land_mask"] = da_land_mask
+
     ds_all["valid_l3c_bitmask"].attrs = {
     "long_name": "Valid post-QC L3C input dataset bitmask",
     "definition": str(metadata.definition),
@@ -343,6 +385,7 @@ def save_ts_nc(start_date, end_date, sitename="gbr"):
     }
      
     encoding = {var_name: {"zlib": True, "complevel": 4} for var_name in var_names}
+    encoding["land_mask"] = {"zlib":True,"complevel":4}
     encoding["valid_l3c_bitmask"]["dtype"] = "uint16" 
     print(f"Saving NetCDF: {filename}")
     ds_all.to_netcdf(filename, engine="netcdf4", encoding=encoding)
